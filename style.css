@@ -1,0 +1,127 @@
+:root {
+  --bg-light: #f0f8ff;
+  --bg-dark: #1e1e2f;
+  --text-light: #000;
+  --text-dark: #fff;
+  --accent: #00aaff;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: var(--bg-light);
+  color: var(--text-light);
+  transition: background 0.3s, color 0.3s;
+}
+
+body.dark {
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+}
+
+h1 {
+  text-align: center;
+  font-size: 2.5em;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+input, select, button {
+  padding: 10px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: none;
+}
+
+button {
+  background-color: var(--accent);
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0077cc;
+}
+
+.countdown {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.card {
+  background-color: rgba(0, 170, 255, 0.1);
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 100px;
+  animation: pulse 1s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.label {
+  font-size: 0.8em;
+  margin-top: 5px;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.milestones {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.milestones li {
+  margin: 5px 0;
+}
+
+.embed-tools {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.embed-tools textarea {
+  width: 90%;
+  height: 80px;
+  margin-top: 10px;
+  font-size: 0.9em;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  resize: none;
+}
+
+iframe#preview {
+  width: 90%;
+  height: 300px;
+  border: 1px solid #ccc;
+  margin-top: 20px;
+  border-radius: 5px;
+}
+
+#qrcode {
+  margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+  h1 { font-size: 1.8em; }
+  .card { min-width: 80px; }
+}
