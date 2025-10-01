@@ -262,6 +262,14 @@
     }
 
     function downloadQRCode() {
-      const qrCanvas = document.querySelector("#qrcode canvas");
-      if (!qrCanvas) {
-      }}
+  const qrCanvas = document.querySelector("#qrcode canvas");
+  if (!qrCanvas) {
+    alert("Please generate the QR code first.");
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.href = qrCanvas.toDataURL("image/png");
+  link.download = "countdown-qr.png";
+  link.click();
+}
