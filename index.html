@@ -124,6 +124,10 @@
       border-radius: 5px;
     }
 
+    #qrcode {
+      margin-top: 20px;
+    }
+
     @media (max-width: 600px) {
       h1 { font-size: 1.8em; }
       .card { min-width: 80px; }
@@ -149,12 +153,16 @@
   <div class="embed-tools">
     <button onclick="generateEmbedCode()">Generate Embed Code</button>
     <button onclick="sharePage(event)">Share This Countdown</button>
+    <button onclick="generateQRCode()">Generate QR Code</button>
+    <button onclick="downloadQRCode()">Download QR Code</button>
     <textarea id="embedOutput" readonly></textarea>
     <iframe id="preview"></iframe>
+    <div id="qrcode"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <script>
     let countdownInterval;
@@ -238,6 +246,26 @@
         })
         .catch(() => alert("Failed to copy URL."));
     }
-  </script>
-</body>
-</html>
+
+    function generateQRCode() {
+      const url = window.location.href;
+      const qrContainer = document.getElementById("qrcode");
+      qrContainer.innerHTML = "";
+      new QRCode(qrContainer, {
+        text: url,
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    function downloadQRCode() {
+      const qrCanvas = document.querySelector("#qrcode canvas");
+      if (!qrCanvas)  {
+        alert("Please generate the QR code first.");
+        return;
+      }
+    }
+      
