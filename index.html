@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Advanced Countdown Timer</title>
+  <style>
+    :root {
+      --bg-light: #f0f8ff;
+      --bg-dark: #1e1e2f;
+      --text-light: #000;
+      --text-dark: #fff;
+      --accent: #00aaff;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: var(--bg-light);
+      color: var(--text-light);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5em;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input, select, button {
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background-color: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0077cc;
+    }
+
+    .countdown {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .card {
+      background-color: rgba(0, 170, 255, 0.1);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      min-width: 100px;
+      animation: pulse 1s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .label {
+      font-size: 0.8em;
+      margin-top: 5px;
+    }
+
+    .progress {
+      width: 80%;
+      height: 10px;
+      background-color: #ccc;
+      margin: 20px auto;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--accent);
+      width: 0%;
+      transition: width 1s linear;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.8em; }
+      .card { min-width: 80px; }
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+  <h1>Advanced Countdown Timer</h1>
+  <div class="controls" role="form" aria-label="Countdown Setup">
+    <input type="text" id="eventName" placeholder="Event Name" aria-label="Event Name"/>
+    <input type="datetime-local" id="eventTime" aria-label="Event Time"/>
+    <select id="timezone" aria-label="Time Zone">
+      <option value="local">Local Time</option>
+      <option value="UTC">UTC</option>
+      <option value="Asia/Kolkata">Asia/Kolkata</option>
+      <option value="America/New_York">America/New_York</option>
+    </select>
+    <label>
+      <input type="checkbox" id="repeatEvent"/> Repeat Yearly
+    </label>
+    <button onclick="startCountdown()">Start</button>
+  </div>
+
+  <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="countdown" id="countdownDisplay" aria-live="polite"></div>
+
+  <audio id="alarmSound" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+
+  <script>
+    let countdownInterval;
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+    }
+
+    function startCountdown() {
+      clearInterval(countdownInterval);
+      const name = document.getElementById('eventName').value.trim();
+      const timeInput = document.getElementById('eventTime').value;
+      const timezone = document.getElementById('timezone').value;
+      const repeat = document.getElementById('repeatEvent').checked;
+
+      if (!timeInput) {
+        alert('Please select a valid future date and time.');
+        return;
+      }
+
+      let eventTime = new Date(timeInput);
+      if (timezone !== 'local') {
+        eventTime = new Date(eventTime.toLocaleString('en-US', { timeZone: timezone }));
+      }
+
+      const now = new Date();
+      if (eventTime <= now) {
+        alert('Please choose a future time.');
+        return;
+      }
+
+      localStorage.setItem('lastEvent', JSON.stringify({ name, time: timeInput, timezone, repeat }));
+
+      countdownInterval = setInterval(() => {
+        const current = new Date();
+        let target = new Date(timeInput);
+        if (timezone !== 'local') {
+          target = new Date(target.toLocaleString('en-US', { timeZone: timezone }));
+        }
+
+        let diff = target - current;
+
+        if (diff <= 0) {
+          document.getElementById('countdownDisplay').innerHTML = `<h2>${name || 'Event'} Started!</h2>`;
+          document.getElementById('progressBar').style.width = '100%';
+          document.getElementById('alarmSound').play();
+          if (Notification.permission === 'granted') {
+            new Notification(`${name || 'Event'} has started!`);
+          }
+          clearInterval(countdownInterval);
+          return;
+        }
+
+        const total = target - now;
+        const percent = ((total - diff) / total) * 100;
+        document.getElementById('progressBar').style.width = `${percent}%`;
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+
+        document.getElementById('countdownDisplay').innerHTML = `
+          <div class="card">${days}<div class="label">Days</div></div>
+          <div class="card">${hours}<div class="label">Hours</div></div>
+          <div class="card">${minutes}<div class="label">Minutes</div></div>
+          <div class="card">${seconds}<div class="label">Seconds</div></div>
+        `;
+      }, 1000);
+    }
+
+    // Load last event
+    window.onload = () => {
+      if (Notification.permission !== 'granted') Notification.requestPermission();
+      const saved = JSON.parse(localStorage.getItem('lastEvent'));
+      if (saved) {
+        document.getElementById('eventName').value = saved.name;
+        document.getElementById('eventTime').value = saved.time;
+        document.getElementById('timezone').value = saved.timezone;
+        document.getElementById('repeatEvent').checked = saved.repeat;
+        startCountdown();
+      }
+    };
+  </script>
+</body>
+</html>
