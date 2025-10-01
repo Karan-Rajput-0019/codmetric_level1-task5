@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Advanced Countdown Timer</title>
+  <title>Enhanced Countdown Timer</title>
   <style>
     :root {
       --bg-light: #f0f8ff;
@@ -85,26 +85,19 @@
       margin-top: 5px;
     }
 
-    .progress {
-      width: 80%;
-      height: 10px;
-      background-color: #ccc;
-      margin: 20px auto;
-      border-radius: 5px;
-      overflow: hidden;
-    }
-
-    .progress-bar {
-      height: 100%;
-      background-color: var(--accent);
-      width: 0%;
-      transition: width 1s linear;
-    }
-
     .theme-toggle {
       position: absolute;
       top: 20px;
       right: 20px;
+    }
+
+    .milestones {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .milestones li {
+      margin: 5px 0;
     }
 
     @media (max-width: 600px) {
@@ -115,26 +108,22 @@
 </head>
 <body>
   <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
-  <h1>Advanced Countdown Timer</h1>
-  <div class="controls" role="form" aria-label="Countdown Setup">
-    <input type="text" id="eventName" placeholder="Event Name" aria-label="Event Name"/>
-    <input type="datetime-local" id="eventTime" aria-label="Event Time"/>
-    <select id="timezone" aria-label="Time Zone">
-      <option value="local">Local Time</option>
-      <option value="UTC">UTC</option>
-      <option value="Asia/Kolkata">Asia/Kolkata</option>
-      <option value="America/New_York">America/New_York</option>
+  <h1>Enhanced Countdown Timer</h1>
+  <div class="controls">
+    <input type="text" id="eventName" placeholder="Event Name (e.g. Birthday 🎉)" />
+    <input type="text" id="eventTimeText" placeholder="e.g. next Friday 5pm" />
+    <select id="themeSelect">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
     </select>
-    <label>
-      <input type="checkbox" id="repeatEvent"/> Repeat Yearly
-    </label>
     <button onclick="startCountdown()">Start</button>
   </div>
 
-  <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
-  <div class="countdown" id="countdownDisplay" aria-live="polite"></div>
+  <ul class="milestones" id="milestoneList"></ul>
+  <div class="countdown" id="countdownDisplay"></div>
 
-  <audio id="alarmSound" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <script>
     let countdownInterval;
@@ -143,81 +132,80 @@
       document.body.classList.toggle('dark');
     }
 
+    function parseNaturalDate(text) {
+      try {
+        return luxon.DateTime.fromJSDate(new Date(text));
+      } catch {
+        return null;
+      }
+    }
+
     function startCountdown() {
       clearInterval(countdownInterval);
       const name = document.getElementById('eventName').value.trim();
-      const timeInput = document.getElementById('eventTime').value;
-      const timezone = document.getElementById('timezone').value;
-      const repeat = document.getElementById('repeatEvent').checked;
+      const inputText = document.getElementById('eventTimeText').value.trim();
+      const theme = document.getElementById('themeSelect').value;
 
-      if (!timeInput) {
-        alert('Please select a valid future date and time.');
+      if (!inputText) {
+        alert('Please enter a valid time like "next Friday 5pm".');
         return;
       }
 
-      let eventTime = new Date(timeInput);
-      if (timezone !== 'local') {
-        eventTime = new Date(eventTime.toLocaleString('en-US', { timeZone: timezone }));
-      }
-
-      const now = new Date();
-      if (eventTime <= now) {
-        alert('Please choose a future time.');
+      const eventTime = parseNaturalDate(inputText);
+      if (!eventTime || eventTime < luxon.DateTime.now()) {
+        alert('Please enter a future time.');
         return;
       }
 
-      localStorage.setItem('lastEvent', JSON.stringify({ name, time: timeInput, timezone, repeat }));
+      document.body.className = theme;
+
+      const milestones = [
+        { label: '1 Week Left', time: eventTime.minus({ days: 7 }) },
+        { label: '3 Days Left', time: eventTime.minus({ days: 3 }) },
+        { label: '1 Hour Left', time: eventTime.minus({ hours: 1 }) }
+      ];
 
       countdownInterval = setInterval(() => {
-        const current = new Date();
-        let target = new Date(timeInput);
-        if (timezone !== 'local') {
-          target = new Date(target.toLocaleString('en-US', { timeZone: timezone }));
-        }
+        const now = luxon.DateTime.now();
+        const diff = eventTime.diff(now, ['days', 'hours', 'minutes', 'seconds']).toObject();
 
-        let diff = target - current;
-
-        if (diff <= 0) {
+        if (eventTime <= now) {
           document.getElementById('countdownDisplay').innerHTML = `<h2>${name || 'Event'} Started!</h2>`;
-          document.getElementById('progressBar').style.width = '100%';
-          document.getElementById('alarmSound').play();
-          if (Notification.permission === 'granted') {
-            new Notification(`${name || 'Event'} has started!`);
-          }
+          confetti();
           clearInterval(countdownInterval);
           return;
         }
 
-        const total = target - now;
-        const percent = ((total - diff) / total) * 100;
-        document.getElementById('progressBar').style.width = `${percent}%`;
-
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((diff / (1000 * 60)) % 60);
-        const seconds = Math.floor((diff / 1000) % 60);
-
         document.getElementById('countdownDisplay').innerHTML = `
-          <div class="card">${days}<div class="label">Days</div></div>
-          <div class="card">${hours}<div class="label">Hours</div></div>
-          <div class="card">${minutes}<div class="label">Minutes</div></div>
-          <div class="card">${seconds}<div class="label">Seconds</div></div>
+          <div class="card">${Math.floor(diff.days)}<div class="label">Days</div></div>
+          <div class="card">${Math.floor(diff.hours)}<div class="label">Hours</div></div>
+          <div class="card">${Math.floor(diff.minutes)}<div class="label">Minutes</div></div>
+          <div class="card">${Math.floor(diff.seconds)}<div class="label">Seconds</div></div>
         `;
+
+        const milestoneList = milestones
+          .filter(m => m.time > now && m.time.diff(now, 'minutes').toObject().minutes < 1)
+          .map(m => `<li>${m.label} 🎯</li>`)
+          .join('');
+        document.getElementById('milestoneList').innerHTML = milestoneList;
       }, 1000);
     }
 
-    // Load last event
-    window.onload = () => {
-      if (Notification.permission !== 'granted') Notification.requestPermission();
-      const saved = JSON.parse(localStorage.getItem('lastEvent'));
-      if (saved) {
-        document.getElementById('eventName').value = saved.name;
-        document.getElementById('eventTime').value = saved.time;
-        document.getElementById('timezone').value = saved.timezone;
-        document.getElementById('repeatEvent').checked = saved.repeat;
-        startCountdown();
-      }
+    // Voice command support
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-IN';
+    recognition.onresult = function(e) {
+      const command = e.results[0][0].transcript.toLowerCase();
+      if (command.includes('start')) startCountdown();
+      if (command.includes('dark')) document.body.className = 'dark';
+      if (command.includes('light')) document.body.className = '';
     };
+
+    document.body.addEventListener('keydown', e => {
+      if (e.key === 'v') recognition.start();
+    });
   </script>
 </body>
 </html>
